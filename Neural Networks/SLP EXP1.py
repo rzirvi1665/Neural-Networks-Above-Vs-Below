@@ -7,8 +7,8 @@ from sklearn.utils import shuffle
 trainingData = np.empty(0)
 testingData = np.empty(0)
 
-numTrain = 500
-numTest = 100
+numTrain = 30000
+numTest = 5000
 
 print("Right about to generate images...")
 
@@ -41,13 +41,13 @@ trainingData=preprocess(trainingData)
 testingData=preprocess(testingData)
 
 model = keras.Sequential([
-	keras.layers.Flatten(input_shape=(28, 28)), 
-	keras.layers.Dense(2, activation="softmax") 
+	keras.layers.Flatten(input_shape=(28, 28)),
+	keras.layers.Dense(2, activation="softmax")
 ])
 
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-model.fit(trainingData, trainingLabels, epochs=10)  # more epochs is not always better
+model.fit(trainingData, trainingLabels, epochs=10)
 
 model.summary()
 
