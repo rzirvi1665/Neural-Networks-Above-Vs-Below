@@ -7,8 +7,8 @@ from sklearn.utils import shuffle
 trainingData = np.empty(0)
 testingData = np.empty(0)
 
-numTrain = 5000
-numTest = 1500
+numTrain = 30000
+numTest = 5000
 
 print("Right about to generate images...")
 
@@ -40,30 +40,32 @@ checkShuffle(trainingLabels)
 trainingData=preprocess(trainingData)
 testingData=preprocess(testingData)
 
-# activation="sigmoid", loss="binary_crossentropy", 1 output neuron
-# activation="softmax", loss="sparse_categorical_crossentropy", 2 output neurons
-
-model = keras.Sequential([  # usually sequential because layers
-  keras.layers.Flatten(input_shape=(28, 28)),  # input layer (1)
-  keras.layers.Dense(128, activation="relu"),  # hidden layer (2)
-  keras.layers.Dense(2, activation="softmax")  # output layer (3)
+model = keras.Sequential([
+  keras.layers.Flatten(input_shape=(28, 28)),
+  keras.layers.Dense(256, activation="relu"),
+  keras.layers.Dense(2, activation="softmax") 
 ])
 
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-model.fit(trainingData, trainingLabels, epochs=10)  # more epochs is not always better
+model.fit(trainingData, trainingLabels, epochs=10)
 
 model.summary()
 
-#display heatmap
 for finalWeights in model.trainable_variables:
-  if finalWeights.shape==(784, 128):
+  if finalWeights.shape==(784, 256):
       heatMapMLP(finalWeights)
       break
 
-predictions = model.predict(testingData)
+for finalWeights in model.trainable_variables:
+  if finalWeights.shape == (784, 256):
+    initialWeights = finalWeights
+  if finalWeights.shape == (256, 2):
+    heatMapMLPOutput(finalWeights, initialWeights, 1)
+    break
 
-# True tests that network can pick the "above the bar", False tests that network can pick "below" the bar image
+
+predictions = model.predict(testingData)
 
 accuracyAbove=testData(predictions, numTest, True, testingData, testingLabels)
 accuracyBelow=testData(predictions, numTest, False, testingData, testingLabels)
