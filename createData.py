@@ -1,6 +1,7 @@
 from PIL import Image
 import random
 import numpy as np
+import math
 
 def triangle(pixelsAbove, pixelsBelow, height, x_startAbove, x_startBelow, upsideDown, distance):
   # ideally, height of 6 = 36 pixels
@@ -199,7 +200,7 @@ def createEXP1(numTrain, numTest):
 
   # distance= 2 means not touching line
   # distance= -3 means can partly be on other side
-  # dustance= -9 means shape can be completely on other side
+  # distance= -9 means shape can be completely on other side
   startShapeTrain= 1
   endShapeTrain= 5
   distanceTrain = 2
@@ -235,6 +236,28 @@ def createEXP2(numTrain, numTest):
   maxEach = maxEachTypeOfShape(numTest, startShapeTest, endShapeTest)
   
   createEachSetEXP2(maxEach, numTest, numTrain, distanceTest, startShapeTest, endShapeTest)
+
+
+def createEXP2DistanceAnalysis(numTrain, numTest):
+  # distance= 3
+  
+  startShapeTrain = 1
+  endShapeTrain = 4
+  distanceTrain = 3
+  
+  startShapeTest = 5
+  endShapeTest = 5
+  distanceTest = 3
+  
+  maxEach = maxEachTypeOfShape(numTrain, startShapeTrain, endShapeTrain)
+  
+  createEachSetEXP2(maxEach, numTrain, 0, distanceTrain, startShapeTrain, endShapeTrain)
+  
+  maxEach = maxEachTypeOfShape(numTest, startShapeTest, endShapeTest)
+  
+  Xdist, Ydist, Eucliddist = createEachSetEXP2DistanceAnalysis(maxEach, numTest, numTrain, distanceTest, startShapeTest, endShapeTest)
+  
+  return Xdist, Ydist, Eucliddist
 
 
 def maxEachTypeOfShape(numTrain, startShape, endShape):
@@ -319,23 +342,11 @@ def createEachSetEXP2(maxEach, numTrain, added, distance, startShape, endShape):
     belowUpperLeftX = random.randint(1, 27 - radius)
     belowUpperLeftY = random.randint(14, 27 - radius)
 
-  # for control 1, should be high accuracy
-  #   if added!=0:
-  #     aboveUpperLeftX = 10
-  #     aboveUpperLeftY = 10
-  #
-  #     belowUpperLeftX = 10
-  #     belowUpperLeftY = 10
-    
-
     x_startAbove=aboveUpperLeftY+3
     x_startBelow=belowUpperLeftY+3
     
     referentCircleEXP2(belowUpperLeftX, belowUpperLeftY, pixelsAbove, radius)
     referentCircleEXP2(aboveUpperLeftX, aboveUpperLeftY, pixelsBelow, radius)
-    
-    # for control 2, should be low accuracy
-    # if added==0:
     
     while True:
       shape = random.randint(startShape, endShape)
@@ -376,7 +387,87 @@ def createEachSetEXP2(maxEach, numTrain, added, distance, startShape, endShape):
     imgAbove.save(f'imagesExperiment2/image({(i + 1 + added)}).png')
     imgBelow.save(f'imagesExperiment2/image({-(i + 1 + added)}).png')
 
+def diamondDistAnalysis(pixelsAbove, pixelsBelow, height, x_startAbove, x_startBelow, distance):
+  # Use height of 7
+  largestRow = 1
+  for i in range(int((height - 1)/2)):
+    largestRow += 2
+
+  aboveUpperLeftX = random.randint(1, 27 - largestRow)
+  aboveUpperLeftY = random.randint(1, x_startAbove - distance - height)
+
+  belowUpperLeftX = random.randint(1, 27 - largestRow)
+  belowUpperLeftY = random.randint(x_startBelow + distance+1, 27 - height)
+
+  narrow=False
+  start = int((aboveUpperLeftX + aboveUpperLeftX + largestRow - 1) / 2)
+  end = int((aboveUpperLeftX + aboveUpperLeftX + largestRow - 1) / 2)
+  for i in range(aboveUpperLeftY, aboveUpperLeftY + height):
+    for j in range(start, end + 1):
+      pixelsAbove[j, i] = 0
+
+    if end-start==largestRow-1:
+      narrow=True
+    if narrow:
+      start+=1
+      end-=1
+    else:
+      start -= 1
+      end += 1
+
+  narrow=False
+  start = int((belowUpperLeftX + belowUpperLeftX + largestRow - 1) / 2)
+  end = int((belowUpperLeftX + belowUpperLeftX + largestRow - 1) / 2)
+  for i in range(belowUpperLeftY, belowUpperLeftY + height):
+    for j in range(start, end + 1):
+      pixelsBelow[j, i] = 0
+    if end-start==largestRow-1:
+      narrow=True
+    if narrow:
+      start+=1
+      end-=1
+    else:
+      start -= 1
+      end += 1
+  
+  return aboveUpperLeftX, aboveUpperLeftY, belowUpperLeftX, belowUpperLeftY
+
+def createEachSetEXP2DistanceAnalysis(maxEach, numTrain, added, distance, startShape, endShape):
+  
+  XDist = np.zeros(numTrain*2)
+  YDist = np.zeros(numTrain*2)
+  EuclidDist = np.zeros(numTrain*2)
+  
+  for i in range(numTrain):
+    imgAbove = Image.new('L', (28, 28), color='white')
+    imgBelow = Image.new('L', (28, 28), color='white')
+    pixelsAbove = imgAbove.load()  # pixel map
+    pixelsBelow = imgBelow.load()
+    radius = 7
     
+    aboveUpperLeftX = random.randint(1, 27 - radius)
+    aboveUpperLeftY = random.randint(1, 27 - radius - 14)
     
+    belowUpperLeftX = random.randint(1, 27 - radius)
+    belowUpperLeftY = random.randint(14, 27 - radius)
     
+    x_startAbove = aboveUpperLeftY + 3
+    x_startBelow = belowUpperLeftY + 3
     
+    referentCircleEXP2(belowUpperLeftX, belowUpperLeftY, pixelsAbove, radius)
+    referentCircleEXP2(aboveUpperLeftX, aboveUpperLeftY, pixelsBelow, radius)
+    
+    # Diamond with height 7, only use odd radius
+    aboveUpperLeftX2, aboveUpperLeftY2, belowUpperLeftX2, belowUpperLeftY2 = diamondDistAnalysis(pixelsAbove, pixelsBelow, 7, x_startBelow, x_startAbove, distance)
+    
+    XDist[i]=(abs(aboveUpperLeftX - aboveUpperLeftX2))
+    XDist[i+numTrain]=(abs(belowUpperLeftX - belowUpperLeftX2))
+    YDist[i]=(abs(aboveUpperLeftY - aboveUpperLeftY2))
+    YDist[i+numTrain]=(abs(belowUpperLeftY - belowUpperLeftY2))
+    EuclidDist[i]=(math.sqrt((abs(aboveUpperLeftX - aboveUpperLeftX2)**2) + (abs(aboveUpperLeftY - aboveUpperLeftY2)**2)))
+    EuclidDist[i+numTrain]=(math.sqrt((abs(belowUpperLeftX - belowUpperLeftX2) ** 2) + (abs(belowUpperLeftY - belowUpperLeftY2) ** 2)))
+    
+    imgAbove.save(f'imagesExperiment2/image({(i + 1 + added)}).png')
+    imgBelow.save(f'imagesExperiment2/image({-(i + 1 + added)}).png')
+    
+  return XDist, YDist, EuclidDist
