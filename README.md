@@ -1,4 +1,4 @@
-# Neural Networks that Detect Above Vs. Below
+# Neural Networks that Implement the Simple Spatial Concept of Above Vs. Below
 
 **Objective:** Test the ability of different neural network architectures to detect above vs. below.
 
